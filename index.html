@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>文件系统</title>
+    <style>
+        /* CSS变量定义 */
+        :root {
+            --primary-color: #4e54c8;
+            --secondary-color: #8f94fb;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 12px;
+            --border-radius-lg: 20px;
+            --border-radius-xl: 25px;
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --box-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease;
+        }
+
+        /* --- 全局重置与基础样式 --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* 统一使用思源黑体/苹方等现代中文字体 */
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+            /* 更有活力的背景渐变 */
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            /* 移动端优化 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* --- 主容器样式 --- */
+        .container {
+            /* 更柔和的白色透明度 */
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 25px; /* 增加圆角 */
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.5) inset; /* 更好的阴影 */
+            padding: 40px;
+            max-width: 850px;
+            width: 100%;
+            backdrop-filter: blur(15px); /* 略微增强模糊效果 */
+        }
+
+        /* --- 标题样式 --- */
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.8em;
+            /* 保持渐变文本效果 */
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800; /* 加粗 */
+            letter-spacing: 1px;
+        }
+
+        /* --- 上传区域样式 --- */
+        .upload-area {
+            border: 4px dashed #667eea; /* 稍微粗一点的虚线 */
+            border-radius: 20px;
+            padding: 50px 40px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            background: #ffffff;
+            margin-bottom: 30px;
+            color: #6c757d;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .upload-area:hover {
+            border-color: #4e54c8;
+            background: #f5f7fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #4e54c8;
+            background: #e9ecef;
+            transform: scale(1.01);
+            box-shadow: 0 0 0 8px rgba(78, 84, 200, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 5em; /* 略微增大图标 */
+            color: #667eea;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(78, 84, 200, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 84, 200, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(78, 84, 200, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+
+
+        .uploading-animation {
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; } /* 稍微降低最小不透明度 */
+            100% { opacity: 1; }
+        }
+
+        /* --- 统一上传卡片样式 --- */
+        .upload-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            padding: 0;
+            margin: 20px 0;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .upload-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+        }
+
+        .upload-card-header {
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid #f1f3f4;
+            background: rgba(78, 84, 200, 0.03);
+        }
+
+        .upload-card-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-card-title::before {
+            content: '📄';
+            font-size: 1.1em;
+        }
+
+        .file-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .file-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .file-info-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .file-info-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .upload-card-body {
+            padding: 25px 30px;
+        }
+
+        .progress-section {
+            margin-bottom: 25px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-title::before {
+            content: '⏳';
+            font-size: 1em;
+        }
+
+        .progress-percentage {
+            font-size: 1.3em;
+            font-weight: 800;
+            color: #4e54c8;
+            background: rgba(78, 84, 200, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border-radius: 6px;
+        }
+
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: rgba(78, 84, 200, 0.05);
+            border-radius: 15px;
+        }
+
+        .stat-item.upload-speed {
+            color: #28a745;
+        }
+
+        .stat-item.chunk-info {
+            color: #4e54c8;
+        }
+
+        .stat-item.time-remaining {
+            color: #dc3545;
+        }
+
+        .upload-card-footer {
+            padding: 20px 30px 25px;
+            background: rgba(78, 84, 200, 0.02);
+            border-top: 1px solid #f1f3f4;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* --- 历史记录样式 --- */
+        .history {
+            margin-top: 40px;
+        }
+
+        .history h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .history-item {
+            background: #ffffff;
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-item:hover {
+            background: #f5f7fa;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-name {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .history-meta {
+            font-size: 13px;
+            color: #777;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .history-item-link {
+            color: white;
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            text-decoration: none;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .history-item-link:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 10px rgba(78, 84, 200, 0.3);
+        }
+
+        .btn-resume, .btn-cancel {
+            /* 统一小按钮样式 */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .btn-resume {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-resume:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #c82333 0%, #fd9843 100%);
+            transform: translateY(-1px);
+        }
+
+        /* --- 弹窗样式 --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            position: relative;
+            margin: 20px;
+        }
+
+        @keyframes slideIn {
+            from { 
+                transform: translateY(-50px) scale(0.9);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .modal-icon {
+            font-size: 2em;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .modal-icon.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .modal-icon.error {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .modal-icon.info {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+
+        .modal-body {
+            color: #666;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 84, 200, 0.3);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 84, 200, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #e9ecef;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        /* --- 历史记录状态样式 --- */
+        .history-item.uploading {
+            border-left: 4px solid #ffc107;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+        }
+
+        .history-item.completed {
+            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
+        }
+
+        .history-item.failed {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, #ffeaea 0%, #ffffff 100%);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.uploading {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+        }
+
+        .status-badge.completed {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .status-badge.failed {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        /* --- 历史记录样式 --- */
+        .history {
+            margin-top: 40px;
+        }
+
+        .history h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .history-item {
+            background: #ffffff;
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-item:hover {
+            background: #f5f7fa;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-name {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .history-meta {
+            font-size: 13px;
+            color: #777;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .history-item-link {
+            color: white;
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            text-decoration: none;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .history-item-link:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 10px rgba(78, 84, 200, 0.3);
+        }
+
+        .btn-resume, .btn-cancel {
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .btn-resume {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-resume:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #c82333 0%, #fd9843 100%);
+            transform: translateY(-1px);
+        }
+
+        /* --- 弹窗样式 --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            position: relative;
+            margin: 20px;
+        }
+
+        @keyframes slideIn {
+            from { 
+                transform: translateY(-50px) scale(0.9);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .modal-icon {
+            font-size: 2em;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .modal-icon.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .modal-icon.error {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .modal-icon.info {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+
+        .modal-body {
+            color: #666;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 84, 200, 0.3);
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 84, 200, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #e9ecef;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        /* --- 历史记录状态样式 --- */
+        .history-item.uploading {
+            border-left: 4px solid #ffc107;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+        }
+
+        .history-item.completed {
+            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
+        }
+
+        .history-item.failed {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, #ffeaea 0%, #ffffff 100%);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.uploading {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+        }
+
+        .status-badge.completed {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .status-badge.failed {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        /* --- 状态信息样式 --- */
+        .status {
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 15px;
+            margin: 15px 0;
+            display: none;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        /* 修复原来的样式中重复定义的 formatFileSize */
+        .chunk-info {
+            font-size: 13px; /* 调整为与 progress-stats 中的定义一致 */
+            color: #4e54c8;
+            margin-top: 0; /* 移除多余的 margin-top */
+        }
+
+        /* --- 文件保存期限提示样式 --- */
+        .storage-notice {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(238, 90, 82, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 100;
+            animation: slideInLeft 0.5s ease-out;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 300px;
+        }
+
+        .notice-icon {
+            font-size: 16px;
+            animation: pulse 2s infinite;
+        }
+
+        .notice-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            /* 容器调整 */
+            .container {
+                padding: 20px;
+                margin: 10px;
+                max-width: none;
+                width: calc(100% - 20px);
+            }
+
+            /* 标题调整 */
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            /* 上传区域调整 */
+            .upload-area {
+                padding: 40px 20px;
+                min-height: 120px;
+            }
+
+            .upload-icon {
+                font-size: 48px;
+                margin-bottom: 15px;
+            }
+
+            .upload-area p {
+                font-size: 16px;
+                margin: 0;
+            }
+
+            /* 上传卡片调整 */
+            .upload-card {
+                margin: 20px 0;
+                padding: 20px;
+            }
+
+            .upload-card-header {
+                margin-bottom: 20px;
+            }
+
+            .upload-card-title {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+
+            /* 文件信息网格调整 */
+            .file-info-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .file-info-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px;
+                background: rgba(78, 84, 200, 0.05);
+                border-radius: 8px;
+            }
+
+            .file-info-label {
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 0;
+            }
+
+            .file-info-value {
+                font-size: 14px;
+                font-weight: 600;
+                text-align: right;
+                word-break: break-all;
+                max-width: 60%;
+            }
+
+            /* 进度条调整 */
+            .progress-section {
+                margin: 20px 0;
+            }
+
+            .progress-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                margin-bottom: 15px;
+            }
+
+            .progress-title {
+                font-size: 16px;
+            }
+
+            .progress-percentage {
+                font-size: 18px;
+                align-self: flex-end;
+            }
+
+            .progress-bar {
+                height: 8px;
+                margin-bottom: 15px;
+            }
+
+            /* 进度统计调整 */
+            .progress-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .stat-item {
+                justify-content: space-between;
+                padding: 8px 12px;
+                background: rgba(78, 84, 200, 0.05);
+                border-radius: 6px;
+            }
+
+            .stat-item span:first-child {
+                font-size: 14px;
+            }
+
+            .stat-item span:last-child {
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            /* 按钮组调整 */
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                justify-content: center;
+                margin: 20px 0;
+            }
+
+            .btn {
+                flex: 1;
+                min-width: calc(50% - 5px);
+                max-width: calc(50% - 5px);
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .btn-secondary {
+                min-width: calc(33.33% - 7px);
+                max-width: calc(33.33% - 7px);
+            }
+
+            .btn-danger {
+                min-width: calc(33.33% - 7px);
+                max-width: calc(33.33% - 7px);
+            }
+
+            /* 历史记录调整 */
+            .history {
+                margin: 20px 0;
+            }
+
+            .history-item {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+
+            .history-item-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .history-item-name {
+                font-size: 14px;
+                word-break: break-all;
+            }
+
+            .history-item-meta {
+                font-size: 12px;
+            }
+
+            /* 弹窗调整 */
+            .modal-content {
+                margin: 20px;
+                padding: 20px;
+                max-width: calc(100vw - 40px);
+                width: calc(100vw - 40px);
+            }
+
+            .modal-header {
+                margin-bottom: 15px;
+            }
+
+            .modal-title {
+                font-size: 18px;
+            }
+
+            .modal-body {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+
+            .modal-btn {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+
+            /* 文件保存期限提示调整 */
+            .storage-notice {
+                bottom: 15px;
+                left: 15px;
+                right: 15px;
+                max-width: none;
+                font-size: 13px;
+                padding: 12px 15px;
+                border-radius: 8px;
+            }
+        }
+
+        /* 超小屏幕优化 (iPhone SE等) */
+        @media (max-width: 375px) {
+            .container {
+                padding: 15px;
+                margin: 5px;
+                width: calc(100% - 10px);
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+                min-height: 100px;
+            }
+
+            .upload-icon {
+                font-size: 40px;
+            }
+
+            .upload-area p {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .file-info-value {
+                font-size: 12px;
+            }
+
+            .storage-notice {
+                font-size: 12px;
+                padding: 10px 12px;
+            }
+
+            /* 移动端触摸优化 */
+            .btn {
+                min-height: 44px; /* iOS推荐的最小触摸目标 */
+                touch-action: manipulation; /* 禁用双击缩放 */
+                user-select: none; /* 防止文本选择 */
+                -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+            }
+
+            .upload-area {
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            /* 移动端滚动优化 */
+            body {
+                -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+                overscroll-behavior: contain; /* 防止过度滚动 */
+            }
+
+            /* 移动端输入优化 */
+            .file-input {
+                touch-action: manipulation;
+            }
+        }
+
+        /* 横屏模式优化 */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .container {
+                padding: 15px;
+            }
+
+            .upload-area {
+                padding: 20px 15px;
+                min-height: 80px;
+            }
+
+            .upload-icon {
+                font-size: 36px;
+                margin-bottom: 10px;
+            }
+
+            .upload-area p {
+                font-size: 14px;
+            }
+
+            .file-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .progress-stats {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .stat-item {
+                flex: 1;
+                min-width: calc(33.33% - 6px);
+            }
+
+            .btn {
+                min-width: 80px;
+                max-width: 120px;
+            }
+        }
+
+        /* 平板设备优化 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                padding: 30px;
+                margin: 20px auto;
+                max-width: 90%;
+            }
+
+            .file-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .controls {
+                gap: 15px;
+            }
+
+            .btn {
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件系统</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <p>拖拽文件到此处或点击选择文件</p>
+            <input type="file" id="fileInput" class="file-input">
+        </div>
+
+        <div class="upload-card" id="uploadCard">
+            <div class="upload-card-header">
+                <h3 class="upload-card-title">文件信息</h3>
+                <div class="file-info-grid">
+                    <div class="file-info-item">
+                        <span class="file-info-label">文件名</span>
+                        <span class="file-info-value" id="fileName">-</span>
+                    </div>
+                    <div class="file-info-item">
+                        <span class="file-info-label">文件大小</span>
+                        <span class="file-info-value" id="fileSize">-</span>
+                    </div>
+                    <div class="file-info-item">
+                        <span class="file-info-label">文件类型</span>
+                        <span class="file-info-value" id="fileType">-</span>
+                    </div>
+                    <div class="file-info-item">
+                        <span class="file-info-label">最后修改</span>
+                        <span class="file-info-value" id="lastModified">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="upload-card-body">
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <div class="progress-title">上传进度</div>
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat-item upload-speed">
+                            <span>⚡</span>
+                            <span id="uploadSpeed">0 KB/s</span>
+                        </div>
+                        <div class="stat-item chunk-info">
+                            <span>📦</span>
+                            <span id="chunkInfo">0/0 分片</span>
+                        </div>
+                        <div class="stat-item time-remaining">
+                            <span>⏰</span>
+                            <span id="timeRemaining">计算中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="upload-card-footer">
+                <div class="controls">
+                    <button class="btn" id="uploadBtn">
+                        <span class="uploading-animation">🚀</span>
+                        开始上传
+                    </button>
+                    <button class="btn btn-secondary" id="pauseBtn" disabled>
+                        <span class="uploading-animation">⏸️</span>
+                        暂停
+                    </button>
+                    <button class="btn btn-secondary" id="resumeBtn" disabled>
+                        <span class="uploading-animation">▶️</span>
+                        继续
+                    </button>
+                    <button class="btn btn-danger" id="cancelBtn">
+                        <span class="uploading-animation">❌</span>
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="history" id="history">
+            <h2>上传历史</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon">✓</div>
+                <h3 class="modal-title" id="modalTitle">提示</h3>
+            </div>
+            <div class="modal-body" id="modalBody">
+                操作完成
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" onclick="fileUploader.closeModal()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 文件保存期限提示 -->
+    <div class="storage-notice">
+        <span class="notice-icon">⏰</span>
+        <span class="notice-text">文件上传后仅保存2天，请及时下载</span>
+    </div>
+
+    <script>
+        // 服务器API配置
+        const API_CONFIG = {
+            baseUrl: window.location.origin,
+            endpoints: {
+                initUpload: '/api/upload/init',
+                uploadChunk: '/api/upload/chunk',
+                completeUpload: '/api/upload/complete',
+                cancelUpload: '/api/upload',
+                uploadStatus: '/api/upload',
+                singleUpload: '/api/upload/single',
+                listFiles: '/api/files',
+                deleteFile: '/api/files'
+            }
+        };
+
+        // 上传配置
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+        const MAX_RETRIES = 3;
+
+        class FileUploader {
+            constructor() {
+                this.file = null;
+                this.uploadId = null;
+                this.chunks = [];
+                this.uploadedChunks = new Set();
+                this.isPaused = false;
+                this.isUploading = false;
+                this.db = null;
+                this.currentUpload = null;
+                
+                this.initDB().then(() => {
+                    this.bindEvents();
+                    this.loadHistory();
+                }).catch(error => {
+                    console.error('初始化数据库失败:', error);
+                    this.bindEvents(); // 即使数据库初始化失败，也要绑定事件
+                });
+            }
+
+            async initDB() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('FileUploadDB', 1);
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve();
+                    };
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('uploads')) {
+                            const store = db.createObjectStore('uploads', { keyPath: 'uploadId' });
+                            store.createIndex('filename', 'filename', { unique: false });
+                            store.createIndex('timestamp', 'timestamp', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('chunks')) {
+                            const store = db.createObjectStore('chunks', { keyPath: 'id' });
+                            store.createIndex('uploadId', 'uploadId', { unique: false });
+                        }
+                    };
+                });
+            }
+
+            bindEvents() {
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInput = document.getElementById('fileInput');
+                
+                uploadArea.addEventListener('click', () => fileInput.click());
+                uploadArea.addEventListener('dragover', this.handleDragOver.bind(this));
+                uploadArea.addEventListener('drop', this.handleDrop.bind(this));
+                uploadArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                
+                fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
+                
+                document.getElementById('uploadBtn').addEventListener('click', () => this.startUpload());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseUpload());
+                document.getElementById('resumeBtn').addEventListener('click', () => this.resumeUpload());
+                document.getElementById('cancelBtn').addEventListener('click', () => this.cancelUpload());
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                document.getElementById('uploadArea').classList.add('dragover');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                document.getElementById('uploadArea').classList.remove('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                document.getElementById('uploadArea').classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                this.handleFileSelect(file);
+            }
+
+            handleFileSelect(file) {
+                if (!file) return;
+                
+                this.file = file;
+                this.displayFileInfo(file);
+                this.checkResumeCapability(file);
+                document.getElementById('controls').style.display = 'block';
+            }
+
+            displayFileInfo(file) {
+                const uploadCard = document.getElementById('uploadCard');
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = this.formatFileSize(file.size);
+                document.getElementById('fileType').textContent = file.type || '未知';
+                document.getElementById('lastModified').textContent = new Date(file.lastModified).toLocaleString();
+                uploadCard.style.display = 'block';
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async checkResumeCapability(file) {
+                if (!this.db) {
+                    console.log('数据库未初始化，跳过恢复检查');
+                    return;
+                }
+                
+                const transaction = this.db.transaction(['uploads'], 'readonly');
+                const store = transaction.objectStore('uploads');
+                const index = store.index('filename');
+                
+                const request = index.getAll(file.name);
+                request.onsuccess = () => {
+                    const uploads = request.result;
+                    const incompleteUpload = uploads.find(u => u.status === 'uploading');
+                    
+                    if (incompleteUpload) {
+                        this.showModal('检测到未完成的上传任务，可以选择继续上传', 'info', '恢复上传');
+                        document.getElementById('resumeBtn').disabled = false;
+                        this.currentUpload = incompleteUpload;
+                    }
+                };
+            }
+
+            async startUpload() {
+                if (!this.file) return;
+                
+                this.isUploading = true;
+                this.isPaused = false;
+                this.updateButtons();
+                
+                try {
+                    // 初始化分片上传
+                    const uploadId = await this.initMultipartUpload();
+                    this.uploadId = uploadId;
+                    
+                    // 立即保存上传记录
+                    this.saveUploadRecord('uploading');
+                    
+                    // 创建分片
+                    this.createChunks();
+                    
+                    // 开始上传分片
+                    await this.uploadChunks();
+                    
+                } catch (error) {
+                    this.showStatus(`上传失败: ${error.message}`, 'error');
+                    this.saveUploadRecord('failed');
+                    this.resetUploadState();
+                }
+            }
+
+            async initMultipartUpload() {
+                try {
+                    const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.initUpload}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            fileName: this.file.name,
+                            fileSize: this.file.size,
+                            chunkSize: CHUNK_SIZE
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`初始化上传失败: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    return data.uploadId;
+                } catch (error) {
+                    console.error('初始化分片上传失败:', error);
+                    throw error;
+                }
+            }
+
+            createChunks() {
+                this.chunks = [];
+                const totalChunks = Math.ceil(this.file.size / CHUNK_SIZE);
+                
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE, this.file.size);
+                    
+                    this.chunks.push({
+                        index: i,
+                        start,
+                        end,
+                        size: end - start,
+                        retries: 0
+                    });
+                }
+            }
+
+            async uploadChunks() {
+                const totalChunks = this.chunks.length;
+                let uploadedCount = this.uploadedChunks.size;
+                let startTime = Date.now();
+                let lastUploadedSize = 0;
+                let lastUpdateTime = startTime;
+                
+                for (const chunk of this.chunks) {
+                    if (this.uploadedChunks.has(chunk.index)) continue;
+                    if (this.isPaused) break;
+                    
+                    try {
+                        const chunkStartTime = Date.now();
+                        await this.uploadChunk(chunk);
+                        const chunkEndTime = Date.now();
+                        
+                        this.uploadedChunks.add(chunk.index);
+                        uploadedCount++;
+                        
+                        // 计算上传速度和剩余时间
+                        const currentTime = Date.now();
+                        const elapsedTime = (currentTime - startTime) / 1000; // 秒
+                        const uploadedSize = uploadedCount * CHUNK_SIZE;
+                        
+                        let uploadSpeed = 0;
+                        let timeRemaining = null;
+                        
+                        if (elapsedTime > 0) {
+                            uploadSpeed = uploadedSize / elapsedTime; // 字节/秒
+                            
+                            if (uploadSpeed > 0) {
+                                const remainingSize = this.file.size - uploadedSize;
+                                timeRemaining = remainingSize / uploadSpeed; // 秒
+                            }
+                        }
+                        
+                        // 更新进度
+                        const progress = (uploadedCount / totalChunks) * 100;
+                        this.updateProgress(progress, uploadedCount, totalChunks, uploadSpeed, timeRemaining);
+                        
+                        // 保存分片上传状态
+                        this.saveChunkStatus(chunk.index);
+                        
+                    } catch (error) {
+                        if (chunk.retries < MAX_RETRIES) {
+                            chunk.retries++;
+                            console.log(`分片 ${chunk.index} 上传失败，重试 ${chunk.retries}/${MAX_RETRIES}`);
+                            continue;
+                        } else {
+                            throw new Error(`分片 ${chunk.index} 上传失败: ${error.message}`);
+                        }
+                    }
+                }
+                
+                if (!this.isPaused && uploadedCount === totalChunks) {
+                    // 完成上传
+                    const downloadUrl = await this.completeUpload();
+                    this.showModal('文件上传完成！', 'success', '上传成功');
+                    this.saveUploadRecord('completed', downloadUrl);
+                    this.loadHistory();
+                    
+                    // 重置上传状态
+                    this.resetUploadState();
+                }
+            }
+
+            async uploadChunk(chunk) {
+                const blob = this.file.slice(chunk.start, chunk.end);
+                const formData = new FormData();
+                formData.append('chunk', blob);
+                formData.append('uploadId', this.uploadId);
+                formData.append('chunkIndex', chunk.index);
+                
+                try {
+                    const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.uploadChunk}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`分片上传失败: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log(`分片 ${chunk.index} 上传成功`, data);
+                    return data;
+                } catch (error) {
+                    console.error(`分片 ${chunk.index} 上传失败:`, error);
+                    throw error;
+                }
+            }
+
+            async completeUpload() {
+                try {
+                    const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.completeUpload}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            uploadId: this.uploadId
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`完成上传失败: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    return data.downloadUrl;
+                } catch (error) {
+                    console.error('完成上传失败:', error);
+                    throw error;
+                }
+            }
+
+            pauseUpload() {
+                this.isPaused = true;
+                this.isUploading = false;
+                this.updateButtons();
+                this.showModal('上传已暂停', 'info', '暂停上传');
+            }
+
+            resumeUpload() {
+                if (this.uploadId && this.file) {
+                    // 如果有当前的上传任务，继续上传
+                    this.isPaused = false;
+                    this.isUploading = true;
+                    this.uploadChunks();
+                } else {
+                    this.showModal('没有可恢复的上传任务', 'error', '无法恢复');
+                }
+                this.updateButtons();
+            }
+
+            async resumeFromHistory(uploadId) {
+                if (!this.db) {
+                    console.error('数据库未初始化，无法恢复上传');
+                    return;
+                }
+                
+                try {
+                    // 从IndexedDB获取上传记录
+                    const uploadTransaction = this.db.transaction(['uploads'], 'readonly');
+                    const uploadStore = uploadTransaction.objectStore('uploads');
+                    const uploadRequest = uploadStore.get(uploadId);
+                    
+                    uploadRequest.onsuccess = async () => {
+                        const uploadRecord = uploadRequest.result;
+                        if (!uploadRecord) {
+                            this.showModal('找不到上传记录', 'error', '恢复失败');
+                            return;
+                        }
+
+                        // 恢复文件信息
+                        this.file = {
+                            name: uploadRecord.filename,
+                            size: uploadRecord.size,
+                            type: uploadRecord.type
+                        };
+                        this.uploadId = uploadRecord.uploadId;
+
+                        // 显示文件信息
+                        this.displayFileInfo(this.file); // 修正：需要传入文件对象
+
+                        // 从IndexedDB恢复分片状态
+                        const chunkTransaction = this.db.transaction(['chunks'], 'readonly');
+                        const chunkStore = chunkTransaction.objectStore('chunks');
+                        const chunkIndex = chunkStore.index('uploadId');
+                        
+                        const chunkRequest = chunkIndex.getAll(uploadId);
+                        chunkRequest.onsuccess = () => {
+                            const chunks = chunkRequest.result;
+                            chunks.forEach(chunk => {
+                                this.uploadedChunks.add(chunk.chunkIndex);
+                            });
+                            
+                            // 重新创建分片并继续上传
+                            this.createChunks();
+                            this.isUploading = true;
+                            this.isPaused = false;
+                            this.updateButtons();
+                            this.uploadChunks();
+                        };
+                    };
+                } catch (error) {
+                    console.error('恢复上传失败:', error);
+                    this.showModal('恢复上传失败', 'error', '恢复失败');
+                }
+            }
+
+            cancelUpload(uploadId = null) {
+                if (uploadId) {
+                    // 取消指定的上传任务
+                    this.deleteHistoryRecord(uploadId);
+                } else {
+                    // 取消当前的上传任务
+                    this.resetUploadState();
+                    this.showModal('上传已取消', 'info', '取消上传');
+                }
+            }
+
+            resetUploadState() {
+                // 重置所有上传相关的状态
+                this.isUploading = false;
+                this.isPaused = false;
+                this.uploadId = null;
+                this.file = null;
+                this.chunks = [];
+                this.uploadedChunks.clear();
+                this.currentUpload = null;
+                
+                // 重置UI状态
+                this.updateButtons();
+                document.getElementById('uploadCard').style.display = 'none';
+                
+                // 重置文件输入
+                document.getElementById('fileInput').value = '';
+            }
+
+            updateProgress(progress, uploaded = 0, total = 0, uploadSpeed = 0, timeRemaining = null) {
+                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('progressPercentage').textContent = `${Math.round(progress)}%`;
+                
+                if (uploaded > 0 && total > 0) {
+                    document.getElementById('chunkInfo').textContent = `${uploaded}/${total} 分片`;
+                }
+                
+                if (uploadSpeed > 0) {
+                    const speedText = uploadSpeed > 1024 * 1024 ? 
+                        `${(uploadSpeed / (1024 * 1024)).toFixed(1)} MB/s` : 
+                        `${(uploadSpeed / 1024).toFixed(1)} KB/s`;
+                    document.getElementById('uploadSpeed').textContent = speedText;
+                }
+                
+                if (timeRemaining !== null) {
+                    const timeText = timeRemaining === Infinity ? '计算中...' : 
+                        this.formatTime(timeRemaining);
+                    document.getElementById('timeRemaining').textContent = timeText;
+                }
+            }
+
+            formatTime(seconds) {
+                if (seconds < 60) {
+                    return `${Math.round(seconds)}秒`;
+                } else if (seconds < 3600) {
+                    return `${Math.floor(seconds / 60)}分${Math.round(seconds % 60)}秒`;
+                } else {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    return `${hours}时${minutes}分`;
+                }
+            }
+
+            updateButtons() {
+                const uploadBtn = document.getElementById('uploadBtn');
+                const pauseBtn = document.getElementById('pauseBtn');
+                const resumeBtn = document.getElementById('resumeBtn');
+                const cancelBtn = document.getElementById('cancelBtn');
+
+                if (this.isUploading) {
+                    uploadBtn.disabled = true;
+                    pauseBtn.disabled = this.isPaused;
+                    resumeBtn.style.display = this.isPaused ? 'inline-flex' : 'none';
+                    cancelBtn.disabled = false;
+                } else {
+                    uploadBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    resumeBtn.style.display = 'none';
+                    cancelBtn.disabled = true;
+                }
+            }
+
+            showStatus(message, type) {
+                // 改为弹窗显示
+                this.showModal(message, type);
+            }
+
+            showModal(message, type = 'info', title = null) {
+                const modal = document.getElementById('modal');
+                const modalIcon = document.getElementById('modalIcon');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+
+                // 设置图标和样式
+                modalIcon.className = `modal-icon ${type}`;
+                switch(type) {
+                    case 'success':
+                        modalIcon.textContent = '✓';
+                        modalTitle.textContent = title || '成功';
+                        break;
+                    case 'error':
+                        modalIcon.textContent = '✕';
+                        modalTitle.textContent = title || '错误';
+                        break;
+                    case 'info':
+                    default:
+                        modalIcon.textContent = 'ℹ';
+                        modalTitle.textContent = title || '提示';
+                        break;
+                }
+
+                modalBody.textContent = message;
+                modal.classList.add('show');
+
+                // 3秒后自动关闭
+                setTimeout(() => {
+                    this.closeModal();
+                }, 3000);
+            }
+
+            closeModal() {
+                const modal = document.getElementById('modal');
+                modal.classList.remove('show');
+            }
+
+            async saveUploadRecord(status, downloadUrl = null) {
+                if (!this.db) {
+                    console.log('数据库未初始化，跳过保存上传记录');
+                    return;
+                }
+                
+                if (!this.uploadId) {
+                    console.log('没有uploadId，跳过保存上传记录');
+                    return;
+                }
+                
+                const record = {
+                    uploadId: this.uploadId,
+                    filename: this.file.name,
+                    size: this.file.size,
+                    type: this.file.type,
+                    timestamp: new Date().toISOString(),
+                    status,
+                    downloadUrl
+                };
+                
+                const transaction = this.db.transaction(['uploads'], 'readwrite');
+                const store = transaction.objectStore('uploads');
+                store.put(record);
+            }
+
+            saveChunkStatus(chunkIndex) {
+                if (!this.db) {
+                    console.log('数据库未初始化，跳过保存分片状态');
+                    return;
+                }
+                
+                const chunkRecord = {
+                    id: `${this.uploadId}_${chunkIndex}`,
+                    uploadId: this.uploadId,
+                    chunkIndex,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const transaction = this.db.transaction(['chunks'], 'readwrite');
+                const store = transaction.objectStore('chunks');
+                store.put(chunkRecord);
+            }
+
+            loadHistory() {
+                if (!this.db) {
+                    console.log('数据库未初始化，跳过加载历史记录');
+                    document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: #999;">暂无上传记录</p>';
+                    return;
+                }
+                
+                const transaction = this.db.transaction(['uploads'], 'readonly');
+                const store = transaction.objectStore('uploads');
+                const index = store.index('timestamp');
+                
+                const request = index.openCursor(null, 'prev');
+                const history = [];
+                
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor && history.length < 10) {
+                        history.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        this.displayHistory(history);
+                    }
+                };
+            }
+
+            displayHistory(history) {
+                const historyContainer = document.getElementById('historyList');
+                
+                if (!history || history.length === 0) {
+                    historyContainer.innerHTML = '<p style="text-align: center; color: #999;">暂无上传记录</p>';
+                    return;
+                }
+
+                historyContainer.innerHTML = history.map(record => {
+                    const statusText = this.getStatusText(record.status);
+                    const statusClass = record.status;
+                    
+                    return `
+                    <div class="history-item ${statusClass}" data-upload-id="${record.uploadId}">
+                        <div class="history-info">
+                            <div class="history-name">${record.filename}</div>
+                            <div class="history-meta">
+                                ${this.formatFileSize(record.size)} • 
+                                <span class="status-badge ${statusClass}">${statusText}</span> • 
+                                ${new Date(record.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                        <div class="history-actions">
+                            ${record.status === 'uploading' ? 
+                                `<button class="btn-resume" onclick="fileUploader.resumeFromHistory('${record.uploadId}')">
+                                    ▶️ 继续上传
+                                </button>` : ''
+                            }
+                            ${record.downloadUrl ? 
+                                `<a href="${record.downloadUrl}" target="_blank" class="history-item-link">下载</a>` : ''
+                            }
+                            <button class="btn-cancel" onclick="fileUploader.deleteHistoryRecord('${record.uploadId}')">
+                                ❌ 删除记录
+                            </button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            }
+
+            getStatusText(status) {
+                const statusMap = {
+                    'uploading': '上传中',
+                    'completed': '已完成',
+                    'failed': '失败'
+                };
+                return statusMap[status] || status;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async deleteHistoryRecord(uploadId) {
+                if (!this.db) {
+                    console.error('数据库未初始化，无法删除记录');
+                    this.showStatus('数据库未初始化，无法删除记录', 'error');
+                    return;
+                }
+
+                try {
+                    // 删除上传记录
+                    const uploadTransaction = this.db.transaction(['uploads'], 'readwrite');
+                    const uploadStore = uploadTransaction.objectStore('uploads');
+                    
+                    await new Promise((resolve, reject) => {
+                        const deleteRequest = uploadStore.delete(uploadId);
+                        deleteRequest.onsuccess = () => resolve();
+                        deleteRequest.onerror = () => reject(deleteRequest.error);
+                    });
+
+                    // 删除相关的分片记录
+                    const chunkTransaction = this.db.transaction(['chunks'], 'readwrite');
+                    const chunkStore = chunkTransaction.objectStore('chunks');
+                    const chunkIndex = chunkStore.index('uploadId');
+                    
+                    await new Promise((resolve, reject) => {
+                        const chunkRequest = chunkIndex.openCursor(IDBKeyRange.only(uploadId));
+                        chunkRequest.onsuccess = (event) => {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                cursor.delete();
+                                cursor.continue();
+                            } else {
+                                resolve();
+                            }
+                        };
+                        chunkRequest.onerror = () => reject(chunkRequest.error);
+                    });
+
+                    this.showModal('记录已删除', 'success', '删除成功');
+                    this.loadHistory(); // 重新加载历史记录
+                } catch (error) {
+                    console.error('删除记录失败:', error);
+                    this.showModal('删除记录失败', 'error', '删除失败');
+                }
+            }
+        }
+
+        // 初始化上传器
+        let fileUploader;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            fileUploader = new FileUploader();
+        });
+    </script>
+</body>
+</html>
