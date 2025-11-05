@@ -49,6 +49,87 @@
             text-rendering: optimizeLegibility;
         }
 
+        /* --- 语言选择器样式 --- */
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .language-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--primary-color);
+            border-radius: 25px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .language-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(78, 84, 200, 0.3);
+        }
+
+        .language-btn:active {
+            transform: translateY(0);
+        }
+
+        .language-flag {
+            font-size: 16px;
+        }
+
+        /* --- GitHub链接样式 --- */
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 160px;
+            z-index: 100;
+        }
+
+        .github-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #333;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            color: #333;
+        }
+
+        .github-btn:hover {
+            background: #333;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(51, 51, 51, 0.3);
+        }
+
+        .github-btn:active {
+            transform: translateY(0);
+        }
+
+        .github-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
         /* --- 主容器样式 --- */
         .container {
             /* 更柔和的白色透明度 */
@@ -59,6 +140,7 @@
             max-width: 850px;
             width: 100%;
             backdrop-filter: blur(15px); /* 略微增强模糊效果 */
+            position: relative;
         }
 
         /* --- 标题样式 --- */
@@ -1044,6 +1126,37 @@
                 margin-bottom: 15px;
             }
 
+            /* 移动端GitHub链接样式 */
+            .github-link {
+                right: 80px;
+                top: 15px;
+            }
+
+            .github-btn {
+                width: 38px;
+                height: 38px;
+            }
+
+            .github-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            /* 移动端语言选择器样式 */
+            .language-selector {
+                top: 15px;
+                right: 15px;
+            }
+
+            .language-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .language-flag {
+                font-size: 14px;
+            }
+
             /* 上传区域调整 */
             .upload-area {
                 padding: 40px 20px;
@@ -1346,6 +1459,37 @@
                 min-width: 80px;
                 max-width: 120px;
             }
+
+            /* 横屏模式GitHub链接样式 */
+            .github-link {
+                right: 120px;
+                top: 10px;
+            }
+
+            .github-btn {
+                width: 36px;
+                height: 36px;
+            }
+
+            .github-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* 横屏模式语言选择器样式 */
+            .language-selector {
+                top: 10px;
+                right: 10px;
+            }
+
+            .language-btn {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+
+            .language-flag {
+                font-size: 12px;
+            }
         }
 
         /* 平板设备优化 */
@@ -1367,37 +1511,85 @@
             .btn {
                 min-width: 120px;
             }
+
+            /* 平板设备GitHub链接样式 */
+            .github-link {
+                right: 140px;
+                top: 18px;
+            }
+
+            .github-btn {
+                width: 42px;
+                height: 42px;
+            }
+
+            .github-btn svg {
+                width: 19px;
+                height: 19px;
+            }
+
+            /* 平板设备语言选择器样式 */
+            .language-selector {
+                top: 18px;
+                right: 18px;
+            }
+
+            .language-btn {
+                padding: 7px 14px;
+                font-size: 13px;
+            }
+
+            .language-flag {
+                font-size: 15px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 语言选择器 -->
+    <div class="language-selector">
+        <button class="language-btn" onclick="toggleLanguage()" id="languageBtn">
+            <span class="language-flag" id="languageFlag">🇨🇳</span>
+            <span id="languageText">中文</span>
+        </button>
+    </div>
+
+    <!-- GitHub链接 -->
+    <div class="github-link">
+        <a href="https://github.com/JunIce/temporary-storage-page" target="_blank" class="github-btn" title="GitHub">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+        </a>
+    </div>
+
     <div class="container">
-        <h1>文件系统</h1>
+        <h1 data-i18n="pageTitle">文件系统</h1>
         
         <div class="upload-area" id="uploadArea">
             <div class="upload-icon">📁</div>
-            <p>拖拽文件到此处或点击选择文件</p>
+            <p data-i18n="uploadAreaText">拖拽文件到此处或点击选择文件</p>
             <input type="file" id="fileInput" class="file-input">
         </div>
 
         <div class="upload-card" id="uploadCard">
             <div class="upload-card-header">
-                <h3 class="upload-card-title">文件信息</h3>
+                <h3 class="upload-card-title" data-i18n="fileInfo">文件信息</h3>
                 <div class="file-info-grid">
                     <div class="file-info-item">
-                        <span class="file-info-label">文件名</span>
+                        <span class="file-info-label" data-i18n="fileName">文件名</span>
                         <span class="file-info-value" id="fileName">-</span>
                     </div>
                     <div class="file-info-item">
-                        <span class="file-info-label">文件大小</span>
+                        <span class="file-info-label" data-i18n="fileSize">文件大小</span>
                         <span class="file-info-value" id="fileSize">-</span>
                     </div>
                     <div class="file-info-item">
-                        <span class="file-info-label">文件类型</span>
+                        <span class="file-info-label" data-i18n="fileType">文件类型</span>
                         <span class="file-info-value" id="fileType">-</span>
                     </div>
                     <div class="file-info-item">
-                        <span class="file-info-label">最后修改</span>
+                        <span class="file-info-label" data-i18n="lastModified">最后修改</span>
                         <span class="file-info-value" id="lastModified">-</span>
                     </div>
                 </div>
@@ -1406,7 +1598,7 @@
             <div class="upload-card-body">
                 <div class="progress-section">
                     <div class="progress-header">
-                        <div class="progress-title">上传进度</div>
+                        <div class="progress-title" data-i18n="uploadProgress">上传进度</div>
                         <div class="progress-percentage" id="progressPercentage">0%</div>
                     </div>
                     <div class="progress-bar">
@@ -1419,11 +1611,11 @@
                         </div>
                         <div class="stat-item chunk-info">
                             <span>📦</span>
-                            <span id="chunkInfo">0/0 分片</span>
+                            <span id="chunkInfo" data-i18n="chunkInfo">0/0 分片</span>
                         </div>
                         <div class="stat-item time-remaining">
                             <span>⏰</span>
-                            <span id="timeRemaining">计算中...</span>
+                            <span id="timeRemaining" data-i18n="calculating">计算中...</span>
                         </div>
                     </div>
                 </div>
@@ -1433,19 +1625,19 @@
                 <div class="controls">
                     <button class="btn" id="uploadBtn">
                         <span class="uploading-animation">🚀</span>
-                        开始上传
+                        <span data-i18n="startUpload">开始上传</span>
                     </button>
                     <button class="btn btn-secondary" id="pauseBtn" disabled>
                         <span class="uploading-animation">⏸️</span>
-                        暂停
+                        <span data-i18n="pause">暂停</span>
                     </button>
                     <button class="btn btn-secondary" id="resumeBtn" disabled>
                         <span class="uploading-animation">▶️</span>
-                        继续
+                        <span data-i18n="resume">继续</span>
                     </button>
                     <button class="btn btn-danger" id="cancelBtn">
                         <span class="uploading-animation">❌</span>
-                        取消
+                        <span data-i18n="cancel">取消</span>
                     </button>
                 </div>
             </div>
@@ -1454,7 +1646,7 @@
         <div class="status" id="status"></div>
 
         <div class="history" id="history">
-            <h2>上传历史</h2>
+            <h2 data-i18n="uploadHistory">上传历史</h2>
             <div id="historyList"></div>
         </div>
     </div>
@@ -1464,13 +1656,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-icon" id="modalIcon">✓</div>
-                <h3 class="modal-title" id="modalTitle">提示</h3>
+                <h3 class="modal-title" id="modalTitle" data-i18n="tip">提示</h3>
             </div>
-            <div class="modal-body" id="modalBody">
+            <div class="modal-body" id="modalBody" data-i18n="operationComplete">
                 操作完成
             </div>
             <div class="modal-footer">
-                <button class="modal-btn modal-btn-primary" onclick="fileUploader.closeModal()">确定</button>
+                <button class="modal-btn modal-btn-primary" onclick="fileUploader.closeModal()" data-i18n="confirm">确定</button>
             </div>
         </div>
     </div>
@@ -1478,10 +1670,162 @@
     <!-- 文件保存期限提示 -->
     <div class="storage-notice">
         <span class="notice-icon">⏰</span>
-        <span class="notice-text">文件上传后仅保存2天，请及时下载</span>
+        <span class="notice-text" data-i18n="storageNotice">文件上传后仅保存2天，请及时下载</span>
     </div>
 
     <script>
+        // 国际化配置
+        const i18n = {
+            currentLang: 'zh-CN',
+            translations: {
+                'zh-CN': {
+                    title: '文件系统',
+                    pageTitle: '文件系统',
+                    uploadAreaText: '拖拽文件到此处或点击选择文件',
+                    fileInfo: '文件信息',
+                    fileName: '文件名',
+                    fileSize: '文件大小',
+                    fileType: '文件类型',
+                    lastModified: '最后修改',
+                    uploadProgress: '上传进度',
+                    chunkInfo: '{0}/{1} 分片',
+                    calculating: '计算中...',
+                    startUpload: '开始上传',
+                    pause: '暂停',
+                    resume: '继续',
+                    cancel: '取消',
+                    uploadHistory: '上传历史',
+                    tip: '提示',
+                    operationComplete: '操作完成',
+                    confirm: '确定',
+                    storageNotice: '文件上传后仅保存2天，请及时下载',
+                    uploading: '上传中',
+                    completed: '已完成',
+                    failed: '失败',
+                    resumeUpload: '继续上传',
+                    download: '下载',
+                    deleteRecord: '删除记录',
+                    recordDeleted: '记录已删除',
+                    deleteSuccess: '删除成功',
+                    deleteFailed: '删除记录失败',
+                    noUploadRecords: '暂无上传记录',
+                    unknown: '未知',
+                    continueUpload: '▶️ 继续上传',
+                    deleteRecordBtn: '❌ 删除记录',
+                    languageText: '中文'
+                },
+                'en-US': {
+                    title: 'File System',
+                    pageTitle: 'File System',
+                    uploadAreaText: 'Drag files here or click to select files',
+                    fileInfo: 'File Information',
+                    fileName: 'File Name',
+                    fileSize: 'File Size',
+                    fileType: 'File Type',
+                    lastModified: 'Last Modified',
+                    uploadProgress: 'Upload Progress',
+                    chunkInfo: '{0}/{1} Chunks',
+                    calculating: 'Calculating...',
+                    startUpload: 'Start Upload',
+                    pause: 'Pause',
+                    resume: 'Resume',
+                    cancel: 'Cancel',
+                    uploadHistory: 'Upload History',
+                    tip: 'Notice',
+                    operationComplete: 'Operation Complete',
+                    confirm: 'OK',
+                    storageNotice: 'Files are saved for only 2 days after upload, please download in time',
+                    uploading: 'Uploading',
+                    completed: 'Completed',
+                    failed: 'Failed',
+                    resumeUpload: 'Resume Upload',
+                    download: 'Download',
+                    deleteRecord: 'Delete Record',
+                    recordDeleted: 'Record Deleted',
+                    deleteSuccess: 'Delete Success',
+                    deleteFailed: 'Failed to Delete Record',
+                    noUploadRecords: 'No Upload Records',
+                    unknown: 'Unknown',
+                    continueUpload: '▶️ Resume Upload',
+                    deleteRecordBtn: '❌ Delete Record',
+                    languageText: 'English'
+                }
+            }
+        };
+
+        // 语言切换功能
+        function toggleLanguage() {
+            const currentLang = i18n.currentLang;
+            const newLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
+            setLanguage(newLang);
+        }
+
+        function setLanguage(lang) {
+            i18n.currentLang = lang;
+            
+            // 更新HTML lang属性
+            const htmlElement = document.getElementById('htmlLang');
+            if (htmlElement) {
+                htmlElement.setAttribute('lang', lang);
+            }
+            
+            // 更新语言按钮
+            const languageBtn = document.getElementById('languageBtn');
+            const languageFlag = document.getElementById('languageFlag');
+            const languageText = document.getElementById('languageText');
+            
+            if (languageFlag && languageText) {
+                if (lang === 'zh-CN') {
+                    languageFlag.textContent = '🇨🇳';
+                    languageText.textContent = '中文';
+                } else {
+                    languageFlag.textContent = '🇺🇸';
+                    languageText.textContent = 'English';
+                }
+            }
+            
+            // 更新所有带有data-i18n属性的元素
+            updateAllTranslations();
+            
+            // 保存语言设置到localStorage
+            localStorage.setItem('preferredLanguage', lang);
+        }
+
+        function updateAllTranslations() {
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                const translation = i18n.translations[i18n.currentLang][key];
+                if (translation) {
+                    // 处理包含占位符的翻译
+                    if (key === 'chunkInfo') {
+                        // 对于分片信息，保持原有的动态更新逻辑
+                        return;
+                    }
+                    element.textContent = translation;
+                }
+            });
+        }
+
+        function t(key, ...args) {
+            let translation = i18n.translations[i18n.currentLang][key] || key;
+            
+            // 处理占位符
+            if (args.length > 0) {
+                args.forEach((arg, index) => {
+                    translation = translation.replace(`{${index}}`, arg);
+                });
+            }
+            
+            return translation;
+        }
+
+        // 页面加载时恢复语言设置
+        function initLanguage() {
+            const savedLang = localStorage.getItem('preferredLanguage') || 'zh-CN';
+            i18n.currentLang = savedLang; // 先设置语言，避免后续调用t()函数时出错
+        }
+
         // 服务器API配置
         const API_CONFIG = {
             baseUrl: window.location.origin,
@@ -1593,7 +1937,7 @@
                 const uploadCard = document.getElementById('uploadCard');
                 document.getElementById('fileName').textContent = file.name;
                 document.getElementById('fileSize').textContent = this.formatFileSize(file.size);
-                document.getElementById('fileType').textContent = file.type || '未知';
+                document.getElementById('fileType').textContent = file.type || (i18n.translations[i18n.currentLang]?.unknown || '未知');
                 document.getElementById('lastModified').textContent = new Date(file.lastModified).toLocaleString();
                 uploadCard.style.display = 'block';
             }
@@ -1926,7 +2270,9 @@
                 document.getElementById('progressPercentage').textContent = `${Math.round(progress)}%`;
                 
                 if (uploaded > 0 && total > 0) {
-                    document.getElementById('chunkInfo').textContent = `${uploaded}/${total} 分片`;
+                    const translations = i18n.translations[i18n.currentLang] || i18n.translations['zh-CN'];
+                    const template = translations.chunkInfo || '{0}/{1} 分片';
+                    document.getElementById('chunkInfo').textContent = template.replace('{0}', uploaded).replace('{1}', total);
                 }
                 
                 if (uploadSpeed > 0) {
@@ -2087,53 +2433,55 @@
             }
 
             displayHistory(history) {
-                const historyContainer = document.getElementById('historyList');
-                
-                if (!history || history.length === 0) {
-                    historyContainer.innerHTML = '<p style="text-align: center; color: #999;">暂无上传记录</p>';
-                    return;
-                }
+            const historyContainer = document.getElementById('historyList');
+            const translations = i18n.translations[i18n.currentLang] || i18n.translations['zh-CN'];
+            
+            if (!history || history.length === 0) {
+                historyContainer.innerHTML = `<p style="text-align: center; color: #999;">${translations.noUploadRecords}</p>`;
+                return;
+            }
 
-                historyContainer.innerHTML = history.map(record => {
-                    const statusText = this.getStatusText(record.status);
-                    const statusClass = record.status;
-                    
-                    return `
-                    <div class="history-item ${statusClass}" data-upload-id="${record.uploadId}">
-                        <div class="history-info">
-                            <div class="history-name">${record.filename}</div>
-                            <div class="history-meta">
-                                ${this.formatFileSize(record.size)} • 
-                                <span class="status-badge ${statusClass}">${statusText}</span> • 
-                                ${new Date(record.timestamp).toLocaleString()}
-                            </div>
-                        </div>
-                        <div class="history-actions">
-                            ${record.status === 'uploading' ? 
-                                `<button class="btn-resume" onclick="fileUploader.resumeFromHistory('${record.uploadId}')">
-                                    ▶️ 继续上传
-                                </button>` : ''
-                            }
-                            ${record.downloadUrl ? 
-                                `<a href="${record.downloadUrl}" target="_blank" class="history-item-link">下载</a>` : ''
-                            }
-                            <button class="btn-cancel" onclick="fileUploader.deleteHistoryRecord('${record.uploadId}')">
-                                ❌ 删除记录
-                            </button>
+            historyContainer.innerHTML = history.map(record => {
+                const statusText = this.getStatusText(record.status);
+                const statusClass = record.status;
+                
+                return `
+                <div class="history-item ${statusClass}" data-upload-id="${record.uploadId}">
+                    <div class="history-info">
+                        <div class="history-name">${record.filename}</div>
+                        <div class="history-meta">
+                            ${this.formatFileSize(record.size)} • 
+                            <span class="status-badge ${statusClass}">${statusText}</span> • 
+                            ${new Date(record.timestamp).toLocaleString()}
                         </div>
                     </div>
-                `;
-                }).join('');
-            }
+                    <div class="history-actions">
+                        ${record.status === 'uploading' ? 
+                            `<button class="btn-resume" onclick="fileUploader.resumeFromHistory('${record.uploadId}')">
+                                ${translations.continueUpload}
+                            </button>` : ''
+                        }
+                        ${record.downloadUrl ? 
+                            `<a href="${record.downloadUrl}" target="_blank" class="history-item-link">${translations.download}</a>` : ''
+                        }
+                        <button class="btn-cancel" onclick="fileUploader.deleteHistoryRecord('${record.uploadId}')">
+                            ${translations.deleteRecordBtn}
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
 
             getStatusText(status) {
-                const statusMap = {
-                    'uploading': '上传中',
-                    'completed': '已完成',
-                    'failed': '失败'
-                };
-                return statusMap[status] || status;
-            }
+            const translations = i18n.translations[i18n.currentLang] || i18n.translations['zh-CN'];
+            const statusMap = {
+                'uploading': translations.uploading,
+                'completed': translations.completed,
+                'failed': translations.failed
+            };
+            return statusMap[status] || translations.unknown || '未知';
+        }
 
             formatFileSize(bytes) {
                 if (bytes === 0) return '0 Bytes';
@@ -2144,55 +2492,70 @@
             }
 
             async deleteHistoryRecord(uploadId) {
-                if (!this.db) {
-                    console.error('数据库未初始化，无法删除记录');
-                    this.showStatus('数据库未初始化，无法删除记录', 'error');
-                    return;
-                }
-
-                try {
-                    // 删除上传记录
-                    const uploadTransaction = this.db.transaction(['uploads'], 'readwrite');
-                    const uploadStore = uploadTransaction.objectStore('uploads');
-                    
-                    await new Promise((resolve, reject) => {
-                        const deleteRequest = uploadStore.delete(uploadId);
-                        deleteRequest.onsuccess = () => resolve();
-                        deleteRequest.onerror = () => reject(deleteRequest.error);
-                    });
-
-                    // 删除相关的分片记录
-                    const chunkTransaction = this.db.transaction(['chunks'], 'readwrite');
-                    const chunkStore = chunkTransaction.objectStore('chunks');
-                    const chunkIndex = chunkStore.index('uploadId');
-                    
-                    await new Promise((resolve, reject) => {
-                        const chunkRequest = chunkIndex.openCursor(IDBKeyRange.only(uploadId));
-                        chunkRequest.onsuccess = (event) => {
-                            const cursor = event.target.result;
-                            if (cursor) {
-                                cursor.delete();
-                                cursor.continue();
-                            } else {
-                                resolve();
-                            }
-                        };
-                        chunkRequest.onerror = () => reject(chunkRequest.error);
-                    });
-
-                    this.showModal('记录已删除', 'success', '删除成功');
-                    this.loadHistory(); // 重新加载历史记录
-                } catch (error) {
-                    console.error('删除记录失败:', error);
-                    this.showModal('删除记录失败', 'error', '删除失败');
-                }
+            const translations = i18n.translations[i18n.currentLang] || i18n.translations['zh-CN'];
+            
+            if (!confirm(translations.recordDeleted)) {
+                return;
             }
+
+            if (!this.db) {
+                console.error('数据库未初始化，无法删除记录');
+                this.showStatus('数据库未初始化，无法删除记录', 'error');
+                return;
+            }
+
+            try {
+                // 删除上传记录
+                const uploadTransaction = this.db.transaction(['uploads'], 'readwrite');
+                const uploadStore = uploadTransaction.objectStore('uploads');
+                
+                await new Promise((resolve, reject) => {
+                    const deleteRequest = uploadStore.delete(uploadId);
+                    deleteRequest.onsuccess = () => resolve();
+                    deleteRequest.onerror = () => reject(deleteRequest.error);
+                });
+
+                // 删除相关的分片记录
+                const chunkTransaction = this.db.transaction(['chunks'], 'readwrite');
+                const chunkStore = chunkTransaction.objectStore('chunks');
+                const chunkIndex = chunkStore.index('uploadId');
+                
+                await new Promise((resolve, reject) => {
+                    const chunkRequest = chunkIndex.openCursor(IDBKeyRange.only(uploadId));
+                    chunkRequest.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            cursor.delete();
+                            cursor.continue();
+                        } else {
+                            resolve();
+                        }
+                    };
+                    chunkRequest.onerror = () => reject(chunkRequest.error);
+                });
+
+                this.showModal(translations.deleteSuccess, 'success', translations.deleteSuccess);
+                this.loadHistory(); // 重新加载历史记录
+            } catch (error) {
+                console.error('删除记录失败:', error);
+                this.showModal(translations.deleteFailed, 'error', translations.deleteFailed);
+            }
+        }
         }
 
         // 初始化上传器
         let fileUploader;
         
         document.addEventListener('DOMContentLoaded', () => {
+            // 初始化语言
+            initLanguage();
+            
+            // 延迟调用setLanguage以确保DOM元素已经加载
+            setTimeout(() => {
+                setLanguage(i18n.currentLang);
+            }, 0);
+            
+            // 初始化文件上传器
             fileUploader = new FileUploader();
         });
     </script>
