@@ -1,190 +1,362 @@
-# MinIO 文件上传服务器
+# MinIO File Upload Server
 
-这是一个基于 Express.js 和 MinIO 的文件上传服务器，支持大文件分片上传、断点续传等功能。
+A powerful file upload server based on Express.js and MinIO, designed for modern web applications with enterprise-grade features including large file chunked uploads, resumable uploads, multi-language interface, and more.
 
-## 功能特性
+## Screenshots
 
-- 🚀 大文件分片上传
-- ⏸️ 断点续传
-- 📁 拖拽上传
-- 📊 实时上传进度
-- 📝 上传历史记录
-- 🔄 自动重试机制
-- 📱 响应式设计
+![Page Screenshot](./screenshots/page.png)
 
-## 快速开始
+## ✨ Core Features
 
-### 1. 安装依赖
+### 🚀 File Upload Capabilities
+- **Large File Chunked Upload** - Stable upload support for GB-level files
+- **Resumable Upload** - Resume uploads from breakpoints after network interruptions
+- **Drag & Drop Upload** - Intuitive drag-and-drop file upload experience
+- **Batch Upload** - Support for simultaneous multiple file uploads
+- **Real-time Progress** - Display upload speed, progress percentage, and remaining time
+- **Auto Retry** - Automatic retry mechanism for upload failures
+
+### 🎨 User Interface
+- **Responsive Design** - Perfect adaptation for desktop, tablet, and mobile
+- **Modern UI** - Gradient colors and smooth animations
+- **Multi-language Support** - Chinese and English interface switching
+- **Dark Theme** - Eye-friendly dark interface option
+- **Touch Optimization** - Mobile-friendly touch interactions
+
+### 📊 Data Management
+- **Upload History** - Local storage of upload records
+- **File Management** - View, download, and delete uploaded files
+- **Status Tracking** - Real-time display of upload status (uploading/completed/failed)
+- **Storage Reminders** - File save期限 reminders
+
+### 🔒 Security Features
+- **File Validation** - File type and size validation
+- **Temporary Storage** - Automatic file cleanup
+- **Access Control** - MinIO key-based access control
+- **HTTPS Support** - Secure transmission for production environments
+
+## 🚀 Quick Start
+
+### Requirements
+
+- Node.js 14.0 or higher
+- MinIO server
+- Modern browsers (Chrome 80+, Firefox 75+, Safari 13+)
+
+### 1. Clone Project
+
+```bash
+git clone https://github.com/your-username/minio-server.git
+cd minio-server
+```
+
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 启动服务器
+### 3. Configure Environment Variables
 
-```bash
-# 开发模式
-npm run dev
+Create `.env` file:
 
-# 生产模式
-npm start
+```env
+# MinIO Configuration
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+MINIO_BUCKET=temporary-files
+MINIO_USE_SSL=false
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# File Configuration
+MAX_FILE_SIZE=1073741824  # 1GB
+CHUNK_SIZE=5242880       # 5MB
+FILE_EXPIRY_DAYS=2       # 2 days
 ```
 
-### 3. 访问应用
+### 4. Start Server
 
-打开浏览器访问 `http://localhost:3000`
+```bash
+# Development mode (hot reload)
+npm run dev
 
-## API 接口
+# Production mode
+npm start
 
-### 初始化分片上传
+```
+
+### 5. Access Application
+
+Open browser and visit `http://localhost:3000`
+
+## 📚 API Documentation
+
+### Chunked Upload Process
+
+#### 1. Initialize Chunked Upload
 
 ```http
 POST /api/upload/init
 Content-Type: application/json
 
 {
-  "fileName": "example.pdf",
-  "fileSize": 10485760,
-  "chunkSize": 5242880
+  "fileName": "large-file.mp4",
+  "fileSize": 1073741824,
+  "chunkSize": 5242880,
+  "totalChunks": 205,
+  "fileType": "video/mp4"
 }
 ```
 
-### 上传分片
+**Response:**
+```json
+{
+  "success": true,
+  "uploadId": "uuid-upload-id",
+  "chunkSize": 5242880,
+  "totalChunks": 205
+}
+```
+
+#### 2. Upload Chunk
 
 ```http
 POST /api/upload/chunk
 Content-Type: multipart/form-data
 
-uploadId: uuid
+uploadId: uuid-upload-id
 chunkIndex: 0
-chunk: [文件数据]
+chunk: [binary file data]
 ```
 
-### 完成上传
+**Response:**
+```json
+{
+  "success": true,
+  "chunkIndex": 0,
+  "uploaded": true,
+  "progress": 0.49
+}
+```
+
+#### 3. Complete Upload
 
 ```http
 POST /api/upload/complete
 Content-Type: application/json
 
 {
-  "uploadId": "uuid"
+  "uploadId": "uuid-upload-id",
+  "fileName": "large-file.mp4",
+  "totalChunks": 205
 }
 ```
 
-### 取消上传
+**Response:**
+```json
+{
+  "success": true,
+  "objectName": "uuid-large-file.mp4",
+  "url": "/files/uuid-large-file.mp4",
+  "message": "File upload completed"
+}
+```
 
+### Other API Endpoints
+
+#### Cancel Upload
 ```http
 DELETE /api/upload/:uploadId
 ```
 
-### 获取上传状态
-
+#### Get Upload Status
 ```http
 GET /api/upload/:uploadId/status
 ```
 
-### 单文件上传（小文件）
-
+#### Single File Upload (Small Files)
 ```http
 POST /api/upload/single
 Content-Type: multipart/form-data
 
-file: [文件数据]
+file: [file data]
 ```
 
-### 获取文件列表
-
+#### Get File List
 ```http
-GET /api/files
+GET /api/files?page=1&limit=20
 ```
 
-### 删除文件
+#### Download File
+```http
+GET /api/files/:objectName/download
+```
 
+#### Delete File
 ```http
 DELETE /api/files/:objectName
 ```
 
-## 配置说明
-
-### MinIO 配置
-
-在 `server.js` 中修改 MinIO 连接配置：
-
-```javascript
-const minioConfig = {
-    endPoint: 'your-minio-server',
-    port: 9000,
-    useSSL: false,
-    accessKey: 'your-access-key',
-    secretKey: 'your-secret-key'
-};
-```
-
-### 前端配置
-
-在 `index.html` 中修改 MinIO 配置：
-
-```javascript
-const MINIO_CONFIG = {
-    endPoint: 'http://your-minio-server:9001/',
-    port: 9000,
-    useSSL: false,
-    accessKey: 'your-access-key',
-    secretKey: 'your-secret-key',
-    bucket: 'temporary-files'
-};
-```
-
-## 项目结构
+## 🏗️ Project Structure
 
 ```
 minio-server/
-├── package.json          # 项目依赖配置
-├── server.js             # Express 服务器
-├── index.html            # 前端上传界面
-└── README.md             # 项目说明
+├── package.json              # Project dependencies and scripts
+├── package-lock.json         # Lock dependency versions
+├── server.js                 # Express server main file
+├── index.html                # Frontend upload interface
+├── .env                      # Environment variables configuration
+├── .env.example              # Environment variables example
+├── .gitignore               # Git ignore file
+├── README_CN.md             # Chinese documentation
+├── README.md                # English documentation
+├── node_modules/            # Node.js dependencies
+└── logs/                    # Log files directory
+    ├── access.log           # Access logs
+    ├── error.log            # Error logs
+    └── upload.log           # Upload logs
 ```
 
-## 技术栈
+## 🛠️ Tech Stack
 
-### 后端
-- **Express.js** - Web 框架
-- **MinIO** - 对象存储服务
-- **Multer** - 文件上传中间件
-- **UUID** - 生成唯一标识符
+### Backend Technologies
+- **Express.js** - Fast, minimalist web framework
+- **MinIO** - High-performance object storage service
+- **Multer** - File upload middleware
+- **UUID** - Generate unique identifiers
+- **Helmet** - Security middleware
+- **CORS** - Cross-Origin Resource Sharing
 
-### 前端
-- **原生 JavaScript** - 核心逻辑
-- **HTML5** - 页面结构
-- **CSS3** - 样式设计
-- **IndexedDB** - 本地数据存储
+### Frontend Technologies
+- **Vanilla JavaScript (ES6+)** - Modern JavaScript features
+- **HTML5** - Semantic markup
+- **CSS3** - Modern styles and animations
+- **IndexedDB** - Browser local database
+- **Fetch API** - Modern HTTP requests
+- **Service Worker** - Offline support
 
-## 注意事项
+## 🔧 Development Guide
 
-1. 确保 MinIO 服务器正在运行并且可以访问
-2. 检查 MinIO 的访问密钥和存储桶权限
-3. 大文件上传会占用较多内存，建议适当调整分片大小
-4. 生产环境中建议使用 HTTPS 和更安全的认证机制
+### Local Development
 
-## 故障排除
+1. **Install Development Dependencies**
+   ```bash
+   npm install --dev
+   ```
 
-### 常见问题
+2. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
 
-1. **连接 MinIO 失败**
-   - 检查 MinIO 服务器地址和端口
-   - 验证访问密钥是否正确
-   - 确认网络连接正常
+### Production Deployment
 
-2. **文件上传失败**
-   - 检查文件大小是否超过限制
-   - 确认存储桶是否存在且有写权限
-   - 查看服务器日志获取详细错误信息
+1. **Start Production Server**
+   ```bash
+   npm start
+   ```
 
-3. **分片上传问题**
-   - 检查分片大小设置
-   - 确认所有分片都已成功上传
-   - 验证分片合并逻辑
+2. **Manage Process with PM2**
+   ```bash
+   pm2 start server.js --name minio-server
+   ```
 
-## 许可证
+### Docker Deployment
 
-MIT License
+```dockerfile
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+```bash
+# Build image
+docker build -t minio-server .
+
+# Run container
+docker run -p 3000:3000 --env-file .env minio-server
+```
+
+## 📝 Usage Examples
+
+### JavaScript Client Example
+
+```javascript
+// Initialize upload
+const initUpload = async (file) => {
+  const response = await fetch('/api/upload/init', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      fileName: file.name,
+      fileSize: file.size,
+      chunkSize: 5242880
+    })
+  });
+  
+  return await response.json();
+};
+
+// Upload chunk
+const uploadChunk = async (uploadId, chunkIndex, chunk) => {
+  const formData = new FormData();
+  formData.append('uploadId', uploadId);
+  formData.append('chunkIndex', chunkIndex);
+  formData.append('chunk', chunk);
+  
+  const response = await fetch('/api/upload/chunk', {
+    method: 'POST',
+    body: formData
+  });
+  
+  return await response.json();
+};
+```
+
+### cURL Examples
+
+```bash
+# Initialize upload
+curl -X POST http://localhost:3000/api/upload/init \
+  -H "Content-Type: application/json" \
+  -d '{"fileName":"test.pdf","fileSize":1048576,"chunkSize":524288}'
+
+# Upload chunk
+curl -X POST http://localhost:3000/api/upload/chunk \
+  -F "uploadId=uuid-here" \
+  -F "chunkIndex=0" \
+  -F "chunk=@chunk_0.bin"
+
+# Complete upload
+curl -X POST http://localhost:3000/api/upload/complete \
+  -H "Content-Type: application/json" \
+  -d '{"uploadId":"uuid-here","fileName":"test.pdf","totalChunks":2}'
+```
+
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Thanks to the following open source projects:
+- [Express.js](https://expressjs.com/) - Web framework
+- [MinIO](https://min.io/) - Object storage
+- [Multer](https://github.com/expressjs/multer) - File upload
